@@ -1,0 +1,41 @@
+{
+  "name": "@bankofai/sun-kit",
+  "version": "0.1.0",
+  "description": "SUNSWAP SDK — typed client for SUN.IO read APIs and wallet-dependent on-chain operations (swap, liquidity, positions)",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "commonjs",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "keywords": [
+    "tron",
+    "sunswap",
+    "sun.io",
+    "defi",
+    "sdk"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "tronweb": "^6.2.1"
+  },
+  "peerDependenciesMeta": {
+    "tronweb": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "@sun-protocol/universal-router-sdk": "^1.0.1",
+    "@sun-protocol/permit2-sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "tronweb": "^6.2.1",
+    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
