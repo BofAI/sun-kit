@@ -12,13 +12,21 @@ import type {
   MintPositionV3Params,
   IncreaseLiquidityV3Params,
   DecreaseLiquidityV3Params,
-  ModifyLiquidityV4Params,
-  CreateTokenParams,
-  PumpSwapParams,
+  CollectPositionV3Params,
+  MintPositionV4Params,
+  IncreaseLiquidityV4Params,
+  DecreaseLiquidityV4Params,
+  CollectPositionV4Params,
+  BuyTokenParams,
+  BuyTokenResult,
+  SellTokenParams,
+  SellTokenResult,
+  SunPumpTokenInfo,
   GetBalancesParams,
   TokenBalanceResult,
   EnsureAllowanceParams,
 } from '../types'
+import { SunPumpTokenState } from '../types'
 import type { ContractContext } from './contracts'
 import { readContract, sendContractTx, ensureTokenAllowance as _ensureTokenAllowance } from './contracts'
 import { createReadonlyTronWeb } from './tronweb'
@@ -26,9 +34,36 @@ import { getBalances as _getBalances } from './balances'
 import { quoteExactInput as _quoteExactInput, swapExactInput as _swapExactInput } from './router'
 import { executeSwap } from './swap'
 import { addLiquidityV2 as _addLiquidityV2, removeLiquidityV2 as _removeLiquidityV2 } from './liquidity-v2'
-import { mintPositionV3 as _mintPositionV3, increaseLiquidityV3 as _increaseLiquidityV3, decreaseLiquidityV3 as _decreaseLiquidityV3 } from './positions-v3'
-import { modifyLiquidityV4 as _modifyLiquidityV4 } from './liquidity-v4'
-import { createToken as _createToken, pumpSwap as _pumpSwap } from './sunpump'
+import {
+  mintPositionV3 as _mintPositionV3,
+  increaseLiquidityV3 as _increaseLiquidityV3,
+  decreaseLiquidityV3 as _decreaseLiquidityV3,
+  collectPositionV3 as _collectPositionV3,
+} from './positions-v3'
+import {
+  mintPositionV4 as _mintPositionV4,
+  increaseLiquidityV4 as _increaseLiquidityV4,
+  decreaseLiquidityV4 as _decreaseLiquidityV4,
+  collectPositionV4 as _collectPositionV4,
+  getV4PositionInfo as _getV4PositionInfo,
+  priceToSqrtPriceX96,
+  sqrtPriceX96ToPrice,
+  amountsToSqrtPriceX96,
+  getCLPositionManagerAddress,
+  getPoolManagerAddress,
+  getPermit2Address,
+} from './positions-v4'
+import {
+  buyToken as _buyToken,
+  sellToken as _sellToken,
+  getSunPumpTokenInfo as _getSunPumpTokenInfo,
+  getTokenState as _getTokenState,
+  getTokenPrice as _getTokenPrice,
+  quoteBuy as _quoteBuy,
+  quoteSell as _quoteSell,
+  getMemeTokenBalance as _getMemeTokenBalance,
+  getSunPumpAddress,
+} from './sunpump'
 
 // ---------------------------------------------------------------------------
 // SunKit — main entry point for wallet-dependent on-chain operations
@@ -54,7 +89,6 @@ export class SunKit {
     this.rpcOverride = options.rpcUrl
   }
 
-  /** Internal context passed to all module functions */
   private get ctx(): ContractContext {
     return {
       wallet: this.wallet,
@@ -129,19 +163,73 @@ export class SunKit {
     return _decreaseLiquidityV3(this.ctx, { ...params, network: params.network ?? this.network })
   }
 
-  // ---- V4 (stub) ----------------------------------------------------------
-
-  async modifyLiquidityV4(params: ModifyLiquidityV4Params): Promise<unknown> {
-    return _modifyLiquidityV4(this.ctx, { ...params, network: params.network ?? this.network })
+  async collectPositionV3(params: CollectPositionV3Params): Promise<{ estimatedFees: { amount0: string; amount1: string }; txResult: unknown }> {
+    return _collectPositionV3(this.ctx, { ...params, network: params.network ?? this.network })
   }
 
-  // ---- SunPump (stubs) ----------------------------------------------------
+  // ---- Positions V4 -------------------------------------------------------
 
-  async createToken(params: CreateTokenParams): Promise<unknown> {
-    return _createToken(this.ctx, { ...params, network: params.network ?? this.network })
+  async mintPositionV4(params: MintPositionV4Params) {
+    return _mintPositionV4(this.ctx, { ...params, network: params.network ?? this.network })
   }
 
-  async pumpSwap(params: PumpSwapParams): Promise<unknown> {
-    return _pumpSwap(this.ctx, { ...params, network: params.network ?? this.network })
+  async increaseLiquidityV4(params: IncreaseLiquidityV4Params) {
+    return _increaseLiquidityV4(this.ctx, { ...params, network: params.network ?? this.network })
   }
+
+  async decreaseLiquidityV4(params: DecreaseLiquidityV4Params) {
+    return _decreaseLiquidityV4(this.ctx, { ...params, network: params.network ?? this.network })
+  }
+
+  async collectPositionV4(params: CollectPositionV4Params) {
+    return _collectPositionV4(this.ctx, { ...params, network: params.network ?? this.network })
+  }
+
+  async getV4PositionInfo(positionManagerAddress: string, tokenId: string, network?: string) {
+    return _getV4PositionInfo(this.ctx, network ?? this.network, positionManagerAddress, tokenId)
+  }
+
+  // ---- SunPump ------------------------------------------------------------
+
+  async sunpumpBuy(params: BuyTokenParams): Promise<BuyTokenResult> {
+    return _buyToken(this.ctx, { ...params, network: params.network ?? this.network })
+  }
+
+  async sunpumpSell(params: SellTokenParams): Promise<SellTokenResult> {
+    return _sellToken(this.ctx, { ...params, network: params.network ?? this.network })
+  }
+
+  async getSunPumpTokenInfo(tokenAddress: string, network?: string): Promise<SunPumpTokenInfo> {
+    return _getSunPumpTokenInfo(this.ctx, tokenAddress, network ?? this.network)
+  }
+
+  async getSunPumpTokenState(tokenAddress: string, network?: string): Promise<SunPumpTokenState> {
+    return _getTokenState(this.ctx, tokenAddress, network ?? this.network)
+  }
+
+  async getSunPumpTokenPrice(tokenAddress: string, network?: string): Promise<string> {
+    return _getTokenPrice(this.ctx, tokenAddress, network ?? this.network)
+  }
+
+  async sunpumpQuoteBuy(tokenAddress: string, trxAmount: string, network?: string) {
+    return _quoteBuy(this.ctx, tokenAddress, trxAmount, network ?? this.network)
+  }
+
+  async sunpumpQuoteSell(tokenAddress: string, tokenAmount: string, network?: string) {
+    return _quoteSell(this.ctx, tokenAddress, tokenAmount, network ?? this.network)
+  }
+
+  async getMemeTokenBalance(tokenAddress: string, ownerAddress?: string, network?: string) {
+    return _getMemeTokenBalance(this.ctx, tokenAddress, ownerAddress, network ?? this.network)
+  }
+
+  // ---- Static helpers (no wallet needed) ----------------------------------
+
+  static getCLPositionManagerAddress = getCLPositionManagerAddress
+  static getPoolManagerAddress = getPoolManagerAddress
+  static getPermit2Address = getPermit2Address
+  static getSunPumpAddress = getSunPumpAddress
+  static priceToSqrtPriceX96 = priceToSqrtPriceX96
+  static sqrtPriceX96ToPrice = sqrtPriceX96ToPrice
+  static amountsToSqrtPriceX96 = amountsToSqrtPriceX96
 }

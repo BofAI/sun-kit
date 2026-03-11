@@ -91,6 +91,16 @@ export const TRC20_MIN_ABI = [
     stateMutability: 'nonpayable',
     type: 'function',
   },
+  {
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    name: 'transfer',
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
 ]
 
 export const SUNSWAP_V2_FACTORY_MIN_ABI = [
@@ -138,6 +148,286 @@ export const SUNSWAP_V2_PAIR_MIN_ABI = [
     inputs: [],
     name: 'totalSupply',
     outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+]
+
+// ---------------------------------------------------------------------------
+// SUNSwap V4 canonical contracts (mainnet + Nile)
+// ---------------------------------------------------------------------------
+
+export const SUNSWAP_V4_MAINNET_CL_POSITION_MANAGER = 'TC8xQzPHfn5KceZV6s6GmZkBCFWWUoPXs1'
+export const SUNSWAP_V4_NILE_CL_POSITION_MANAGER = 'TMTQ1BYo15aGgZXHcsBWXyae8bVaAdgfLP'
+
+export const SUNSWAP_V4_MAINNET_POOL_MANAGER = 'TVjuTE3V5bMVdpfNhid8kD2v35T2k1u1Br'
+export const SUNSWAP_V4_NILE_POOL_MANAGER = 'TVivLPeq7FMmTG8Z7HaiBgHTsMwCEcipKT'
+
+// ---------------------------------------------------------------------------
+// Permit2 contract addresses
+// ---------------------------------------------------------------------------
+
+export const PERMIT2_MAINNET = 'TTJxU3P8rHycAyFY4kVtGNfmnMH4ezcuM9'
+export const PERMIT2_NILE = 'TYQuuhGbEMxF7nZxUHV3uHJxAVVAegNU9h'
+
+// ---------------------------------------------------------------------------
+// SunPump (Meme Token Launchpad) contracts
+// ---------------------------------------------------------------------------
+
+export const SUNPUMP_MAINNET = 'TTfvyrAz86hbZk5iDpKD78pqLGgi8C7AAw'
+export const SUNPUMP_NILE = 'TLtTyEwqacNKc5CHLunKvxmqLB336R4Lrm'
+export const SUNPUMP_WTRX = 'TNUC9Qb1rRpS5CbWLmNMxXBjyFoydXjWFR'
+
+// ---------------------------------------------------------------------------
+// V3 Position Manager ABI
+// ---------------------------------------------------------------------------
+
+export const SUNSWAP_V3_POSITION_MANAGER_MIN_ABI = [
+  {
+    inputs: [
+      {
+        components: [
+          { name: 'token0', type: 'address' },
+          { name: 'token1', type: 'address' },
+          { name: 'fee', type: 'uint24' },
+          { name: 'tickLower', type: 'int24' },
+          { name: 'tickUpper', type: 'int24' },
+          { name: 'amount0Desired', type: 'uint256' },
+          { name: 'amount1Desired', type: 'uint256' },
+          { name: 'amount0Min', type: 'uint256' },
+          { name: 'amount1Min', type: 'uint256' },
+          { name: 'recipient', type: 'address' },
+          { name: 'deadline', type: 'uint256' },
+        ],
+        name: 'params',
+        type: 'tuple',
+      },
+    ],
+    name: 'mint',
+    outputs: [
+      { name: 'tokenId', type: 'uint256' },
+      { name: 'liquidity', type: 'uint128' },
+      { name: 'amount0', type: 'uint256' },
+      { name: 'amount1', type: 'uint256' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { name: 'tokenId', type: 'uint256' },
+          { name: 'amount0Desired', type: 'uint256' },
+          { name: 'amount1Desired', type: 'uint256' },
+          { name: 'amount0Min', type: 'uint256' },
+          { name: 'amount1Min', type: 'uint256' },
+          { name: 'deadline', type: 'uint256' },
+        ],
+        name: 'params',
+        type: 'tuple',
+      },
+    ],
+    name: 'increaseLiquidity',
+    outputs: [
+      { name: 'liquidity', type: 'uint128' },
+      { name: 'amount0', type: 'uint256' },
+      { name: 'amount1', type: 'uint256' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { name: 'tokenId', type: 'uint256' },
+          { name: 'liquidity', type: 'uint128' },
+          { name: 'amount0Min', type: 'uint256' },
+          { name: 'amount1Min', type: 'uint256' },
+          { name: 'deadline', type: 'uint256' },
+        ],
+        name: 'params',
+        type: 'tuple',
+      },
+    ],
+    name: 'decreaseLiquidity',
+    outputs: [
+      { name: 'amount0', type: 'uint256' },
+      { name: 'amount1', type: 'uint256' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      {
+        components: [
+          { name: 'tokenId', type: 'uint256' },
+          { name: 'recipient', type: 'address' },
+          { name: 'amount0Max', type: 'uint128' },
+          { name: 'amount1Max', type: 'uint128' },
+        ],
+        name: 'params',
+        type: 'tuple',
+      },
+    ],
+    name: 'collect',
+    outputs: [
+      { name: 'amount0', type: 'uint256' },
+      { name: 'amount1', type: 'uint256' },
+    ],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'positions',
+    outputs: [
+      { name: 'nonce', type: 'uint96' },
+      { name: 'operator', type: 'address' },
+      { name: 'token0', type: 'address' },
+      { name: 'token1', type: 'address' },
+      { name: 'fee', type: 'uint24' },
+      { name: 'tickLower', type: 'int24' },
+      { name: 'tickUpper', type: 'int24' },
+      { name: 'liquidity', type: 'uint128' },
+      { name: 'feeGrowthInside0LastX128', type: 'uint256' },
+      { name: 'feeGrowthInside1LastX128', type: 'uint256' },
+      { name: 'tokensOwed0', type: 'uint128' },
+      { name: 'tokensOwed1', type: 'uint128' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+]
+
+// ---------------------------------------------------------------------------
+// V4 CLPositionManager ABI
+// ---------------------------------------------------------------------------
+
+export const SUNSWAP_V4_CL_POSITION_MANAGER_MIN_ABI = [
+  {
+    inputs: [
+      { name: 'unlockData', type: 'bytes' },
+      { name: 'deadline', type: 'uint256' },
+    ],
+    name: 'modifyLiquidities',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getPoolAndPositionInfo',
+    outputs: [
+      {
+        components: [
+          { name: 'currency0', type: 'address' },
+          { name: 'currency1', type: 'address' },
+          { name: 'fee', type: 'uint24' },
+          { name: 'tickSpacing', type: 'int24' },
+          { name: 'hooks', type: 'address' },
+        ],
+        name: 'poolKey',
+        type: 'tuple',
+      },
+      {
+        components: [
+          { name: 'tickLower', type: 'int24' },
+          { name: 'tickUpper', type: 'int24' },
+          { name: 'liquidity', type: 'uint128' },
+        ],
+        name: 'info',
+        type: 'tuple',
+      },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'tokenId', type: 'uint256' }],
+    name: 'getPositionLiquidity',
+    outputs: [{ name: 'liquidity', type: 'uint128' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+]
+
+// ---------------------------------------------------------------------------
+// SunPump ABI
+// ---------------------------------------------------------------------------
+
+export const SUNPUMP_ABI = [
+  {
+    inputs: [
+      { name: 'token', type: 'address' },
+      { name: 'AmountMin', type: 'uint256' },
+    ],
+    name: 'purchaseToken',
+    outputs: [],
+    stateMutability: 'payable',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'token', type: 'address' },
+      { name: 'tokenAmount', type: 'uint256' },
+      { name: 'AmountMin', type: 'uint256' },
+    ],
+    name: 'saleToken',
+    outputs: [],
+    stateMutability: 'nonpayable',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'token', type: 'address' }],
+    name: 'getTokenState',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'token', type: 'address' }],
+    name: 'getPrice',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'token', type: 'address' },
+      { name: 'trxAmount', type: 'uint256' },
+    ],
+    name: 'getTokenAmountByPurchaseWithFee',
+    outputs: [
+      { name: 'tokenAmount', type: 'uint256' },
+      { name: 'fee', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [
+      { name: 'token', type: 'address' },
+      { name: 'tokenAmount', type: 'uint256' },
+    ],
+    name: 'getTrxAmountBySaleWithFee',
+    outputs: [
+      { name: 'trxAmount', type: 'uint256' },
+      { name: 'fee', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+  {
+    inputs: [{ name: 'token', type: 'address' }],
+    name: 'virtualPools',
+    outputs: [
+      { name: 'TRXReserve', type: 'uint256' },
+      { name: 'TokenReserve', type: 'uint256' },
+      { name: 'launched', type: 'bool' },
+    ],
     stateMutability: 'view',
     type: 'function',
   },

@@ -144,11 +144,11 @@ export interface MintPositionV3Params {
   abi?: any[]
   token0: string
   token1: string
-  fee: number
-  tickLower: number
-  tickUpper: number
-  amount0Desired: string
-  amount1Desired: string
+  fee?: number
+  tickLower?: number
+  tickUpper?: number
+  amount0Desired?: string
+  amount1Desired?: string
   amount0Min?: string
   amount1Min?: string
   recipient?: string
@@ -160,8 +160,13 @@ export interface IncreaseLiquidityV3Params {
   positionManagerAddress: string
   abi?: any[]
   tokenId: string
-  amount0Desired: string
-  amount1Desired: string
+  token0?: string
+  token1?: string
+  fee?: number
+  tickLower?: number
+  tickUpper?: number
+  amount0Desired?: string
+  amount1Desired?: string
   amount0Min?: string
   amount1Min?: string
   deadline?: string | number
@@ -179,26 +184,120 @@ export interface DecreaseLiquidityV3Params {
 }
 
 // ---------------------------------------------------------------------------
-// V4 stub types
+// Positions V3 collect
 // ---------------------------------------------------------------------------
 
-export interface ModifyLiquidityV4Params {
+export interface CollectPositionV3Params {
   network?: string
-  [key: string]: unknown
+  positionManagerAddress: string
+  abi?: any[]
+  tokenId: string
+  recipient?: string
 }
 
 // ---------------------------------------------------------------------------
-// SunPump stub types
+// Positions V4 types
 // ---------------------------------------------------------------------------
 
-export interface CreateTokenParams {
+export interface MintPositionV4Params {
   network?: string
-  [key: string]: unknown
+  token0: string
+  token1: string
+  fee?: number
+  tickLower?: number
+  tickUpper?: number
+  amount0Desired?: string
+  amount1Desired?: string
+  slippage?: number
+  recipient?: string
+  deadline?: string | number
+  sqrtPriceX96?: string
+  createPoolIfNeeded?: boolean
 }
 
-export interface PumpSwapParams {
+export interface IncreaseLiquidityV4Params {
   network?: string
-  [key: string]: unknown
+  tokenId: string
+  token0: string
+  token1: string
+  fee?: number
+  amount0Desired?: string
+  amount1Desired?: string
+  slippage?: number
+  deadline?: string | number
+}
+
+export interface DecreaseLiquidityV4Params {
+  network?: string
+  tokenId: string
+  liquidity: string
+  token0: string
+  token1: string
+  fee?: number
+  amount0Min?: string
+  amount1Min?: string
+  slippage?: number
+  deadline?: string | number
+}
+
+export interface CollectPositionV4Params {
+  network?: string
+  tokenId: string
+  token0?: string
+  token1?: string
+  fee?: number
+  deadline?: string | number
+}
+
+// ---------------------------------------------------------------------------
+// SunPump types
+// ---------------------------------------------------------------------------
+
+export enum SunPumpTokenState {
+  NOT_EXIST = 0,
+  TRADING = 1,
+  LAUNCHED = 2,
+}
+
+export interface SunPumpTokenInfo {
+  tokenAddress: string
+  state: SunPumpTokenState
+  price: string
+  launched: boolean
+  trxReserve: string
+  tokenReserve: string
+}
+
+export interface BuyTokenParams {
+  tokenAddress: string
+  trxAmount: string
+  minTokenOut?: string
+  slippage?: number
+  network?: string
+}
+
+export interface BuyTokenResult {
+  txResult: unknown
+  tokenAddress: string
+  trxSpent: string
+  expectedTokens: string
+  minTokenOut: string
+}
+
+export interface SellTokenParams {
+  tokenAddress: string
+  tokenAmount: string
+  minTrxOut?: string
+  slippage?: number
+  network?: string
+}
+
+export interface SellTokenResult {
+  txResult: unknown
+  tokenAddress: string
+  tokensSold: string
+  expectedTrx: string
+  minTrxOut: string
 }
 
 // ---------------------------------------------------------------------------

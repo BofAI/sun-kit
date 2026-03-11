@@ -33,7 +33,7 @@ export { SunKit, type SunKitOptions } from './kit'
 export { createReadonlyTronWeb } from './kit/tronweb'
 
 // Wallet interface & errors
-export { SunKitError } from './types'
+export { SunKitError, SunPumpTokenState } from './types'
 export type {
   Wallet,
   ContractCallParams,
@@ -48,9 +48,16 @@ export type {
   MintPositionV3Params,
   IncreaseLiquidityV3Params,
   DecreaseLiquidityV3Params,
-  ModifyLiquidityV4Params,
-  CreateTokenParams,
-  PumpSwapParams,
+  CollectPositionV3Params,
+  MintPositionV4Params,
+  IncreaseLiquidityV4Params,
+  DecreaseLiquidityV4Params,
+  CollectPositionV4Params,
+  BuyTokenParams,
+  BuyTokenResult,
+  SellTokenParams,
+  SellTokenResult,
+  SunPumpTokenInfo,
   GetBalancesParams,
   TokenBalanceRequest,
   TokenBalanceResult,
@@ -81,9 +88,21 @@ export {
   SUNSWAP_V3_MAINNET_POSITION_MANAGER,
   SUNSWAP_V3_NILE_FACTORY,
   SUNSWAP_V3_NILE_POSITION_MANAGER,
+  SUNSWAP_V4_MAINNET_CL_POSITION_MANAGER,
+  SUNSWAP_V4_NILE_CL_POSITION_MANAGER,
+  SUNSWAP_V4_MAINNET_POOL_MANAGER,
+  SUNSWAP_V4_NILE_POOL_MANAGER,
+  PERMIT2_MAINNET,
+  PERMIT2_NILE,
+  SUNPUMP_MAINNET,
+  SUNPUMP_NILE,
+  SUNPUMP_WTRX,
   TRC20_MIN_ABI,
   SUNSWAP_V2_FACTORY_MIN_ABI,
   SUNSWAP_V2_PAIR_MIN_ABI,
+  SUNSWAP_V3_POSITION_MANAGER_MIN_ABI,
+  SUNSWAP_V4_CL_POSITION_MANAGER_MIN_ABI,
+  SUNPUMP_ABI,
   type NetworkConstants,
   type SwapConstants,
 } from './constants'

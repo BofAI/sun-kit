@@ -1,9 +1,10 @@
 import { TradePlanner, parseRouteAPIResponse, type ParseRouteOptions } from '@sun-protocol/universal-router-sdk'
 import { AllowanceTransfer, type PermitSingleWithSignature, PERMIT_TYPES } from '@sun-protocol/permit2-sdk'
-import { SunKitError } from '../types'
+import { SunKitError, SunPumpTokenState } from '../types'
 import type { SwapParams, SwapResult, Wallet } from '../types'
-import { MAINNET, NILE, type SwapConstants } from '../constants'
+import { MAINNET, NILE, TRX_ADDRESS, type SwapConstants } from '../constants'
 import { signAndBroadcastContractTx, buildRawContractTx, ensureTokenAllowance, type ContractContext } from './contracts'
+import { getTokenState, buyToken as sunpumpBuy, sellToken as sunpumpSell } from './sunpump'
 
 const SWAP_SUPPORTED_NETWORKS: Record<string, SwapConstants> = {
   mainnet: MAINNET,
@@ -64,6 +65,92 @@ async function fetchRouterAPI(params: RouterAPIParams, baseUrl: string): Promise
 }
 
 // ---------------------------------------------------------------------------
+// SunPump routing
+// ---------------------------------------------------------------------------
+
+async function checkSunPumpTrade(
+  ctx: ContractContext,
+  tokenIn: string,
+  tokenOut: string,
+  network: string,
+): Promise<{ isSunPump: boolean; isBuy: boolean; memeToken: string } | null> {
+  const trxAddresses = [TRX_ADDRESS, TRX_ADDRESS.toLowerCase()]
+  const isTokenInTrx = trxAddresses.includes(tokenIn)
+  const isTokenOutTrx = trxAddresses.includes(tokenOut)
+
+  if (!isTokenInTrx && !isTokenOutTrx) return null
+  if (isTokenInTrx && isTokenOutTrx) return null
+
+  const memeToken = isTokenInTrx ? tokenOut : tokenIn
+  const isBuy = isTokenInTrx
+
+  try {
+    const state = await getTokenState(ctx, memeToken, network)
+    if (state === SunPumpTokenState.TRADING) {
+      return { isSunPump: true, isBuy, memeToken }
+    }
+  } catch {
+    // Not on SunPump or query failed
+  }
+
+  return null
+}
+
+async function executeSunPumpSwap(
+  ctx: ContractContext,
+  params: SwapParams,
+  isBuy: boolean,
+  memeToken: string,
+  slippage: number,
+): Promise<SwapResult> {
+  const network = params.network || 'mainnet'
+
+  if (isBuy) {
+    const result = await sunpumpBuy(ctx, {
+      tokenAddress: memeToken,
+      trxAmount: params.amountIn,
+      slippage,
+      network,
+    })
+
+    const txResult = result.txResult as { txid?: string; transaction?: { txID?: string } }
+    const txid = txResult.txid || txResult.transaction?.txID || 'unknown'
+
+    return {
+      txid,
+      route: {
+        amountIn: result.trxSpent,
+        amountOut: result.expectedTokens,
+        symbols: ['TRX', 'MEME'],
+        poolVersions: ['sunpump'],
+        impact: 'N/A',
+      },
+    }
+  } else {
+    const result = await sunpumpSell(ctx, {
+      tokenAddress: memeToken,
+      tokenAmount: params.amountIn,
+      slippage,
+      network,
+    })
+
+    const txResult = result.txResult as { txid?: string; transaction?: { txID?: string } }
+    const txid = txResult.txid || txResult.transaction?.txID || 'unknown'
+
+    return {
+      txid,
+      route: {
+        amountIn: result.tokensSold,
+        amountOut: result.expectedTrx,
+        symbols: ['MEME', 'TRX'],
+        poolVersions: ['sunpump'],
+        impact: 'N/A',
+      },
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Main swap
 // ---------------------------------------------------------------------------
 
@@ -73,6 +160,13 @@ export async function executeSwap(ctx: ContractContext, params: SwapParams): Pro
   const constants = getSwapConstants(network)
   const testnet = network === 'nile'
 
+  // Check SunPump routing first (TRX <-> meme token in TRADING state)
+  const sunpumpCheck = await checkSunPumpTrade(ctx, params.tokenIn, params.tokenOut, network)
+  if (sunpumpCheck?.isSunPump) {
+    return executeSunPumpSwap(ctx, params, sunpumpCheck.isBuy, sunpumpCheck.memeToken, slippage)
+  }
+
+  // Normal Universal Router swap flow
   if (!ctx.wallet) {
     throw new SunKitError('NO_WALLET', 'Swap requires a wallet.')
   }
@@ -105,7 +199,6 @@ export async function executeSwap(ctx: ContractContext, params: SwapParams): Pro
       spender: constants.permit2,
       requiredAmount: params.amountIn,
     })
-    //sleep 3 seconds to ensure the allowance is registered on-chain before generating the permit
     await new Promise((resolve) => setTimeout(resolve, 3000))
 
     const permit2 = new AllowanceTransfer(tronWeb as any, constants.permit2, testnet)

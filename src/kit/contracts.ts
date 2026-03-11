@@ -118,7 +118,7 @@ export async function buildRawContractTx(
 // Sign & broadcast
 // ---------------------------------------------------------------------------
 
-function requireWallet(ctx: ContractContext): Wallet {
+export function requireWallet(ctx: ContractContext): Wallet {
   if (!ctx.wallet) {
     throw new SunKitError('NO_WALLET', 'No wallet configured. Write operations require a wallet.')
   }
@@ -175,6 +175,20 @@ export async function readConstantContractSolidity(
 // ---------------------------------------------------------------------------
 // Ensure token allowance
 // ---------------------------------------------------------------------------
+
+export async function transferTokenTo(
+  ctx: ContractContext,
+  params: { network?: string; tokenAddress: string; to: string; amount: string },
+): Promise<void> {
+  const network = params.network || 'mainnet'
+  await sendContractTx(ctx, {
+    address: params.tokenAddress,
+    functionName: 'transfer',
+    args: [params.to, params.amount],
+    abi: TRC20_MIN_ABI,
+    network,
+  })
+}
 
 export async function ensureTokenAllowance(
   ctx: ContractContext,
