@@ -20,11 +20,22 @@ const DEFAULT_FEE = 3000
 const DEFAULT_TICK_RANGE_FACTOR = 100
 
 /**
- * Convert Base58 address to hex format for ABI encoding.
- * TronWeb 6.x / ethers 6.x ABI encoder requires hex addresses.
+ * Convert Base58 address to EVM hex format for ABI encoding.
+ * TronWeb 6.x / ethers 6.x ABI encoder requires 0x-prefixed addresses.
+ * TRON hex format: 41xxxx... → EVM format: 0xxxxx...
  */
-function toHexAddress(tronWeb: any, addr: string): string {
-  return tronWeb.address.toHex(addr)
+function toEvmHexAddress(tronWeb: any, addr: string): string {
+  const tronHex = tronWeb.address.toHex(addr)
+  // TRON hex starts with '41', EVM expects '0x' prefix
+  // Remove '41' prefix and add '0x'
+  if (tronHex.startsWith('41') && tronHex.length === 42) {
+    return '0x' + tronHex.slice(2)
+  }
+  // Already has 0x prefix
+  if (tronHex.startsWith('0x')) {
+    return tronHex
+  }
+  return '0x' + tronHex
 }
 
 async function sortTokens(
@@ -132,11 +143,11 @@ export async function mintPositionV3(
     requiredAmount: amount1.toString(),
   })
 
-  // Convert addresses to hex format for ABI encoding (TronWeb 6.x / ethers 6.x)
+  // Convert addresses to EVM hex format for ABI encoding (TronWeb 6.x / ethers 6.x)
   const tronWeb = await createReadonlyTronWeb(network, ctx.rpcOverride, ctx.apiKey)
-  const token0Hex = toHexAddress(tronWeb, token0)
-  const token1Hex = toHexAddress(tronWeb, token1)
-  const recipientHex = toHexAddress(tronWeb, recipient)
+  const token0Hex = toEvmHexAddress(tronWeb, token0)
+  const token1Hex = toEvmHexAddress(tronWeb, token1)
+  const recipientHex = toEvmHexAddress(tronWeb, recipient)
 
   const args = [[
     token0Hex,
@@ -206,32 +217,40 @@ export async function increaseLiquidityV3(
   const needAutoCompute = (amount0 > 0n && amount1 === 0n) || (amount1 > 0n && amount0 === 0n)
 
   if (needAutoCompute) {
+    const tronWeb = await createReadonlyTronWeb(network, ctx.rpcOverride, ctx.apiKey)
+    const pmAbi = params.abi ?? SUNSWAP_V3_POSITION_MANAGER_MIN_ABI
+    const pm = await tronWeb.contract(pmAbi, params.positionManagerAddress)
+
+    // Query position to get token0/token1/fee if not provided
+    const pos = await (pm as any).positions(params.tokenId).call()
+
+    // Get token0/token1 from position if not provided
     if (!token0 || !token1) {
-      throw new SunKitError(
-        'INVALID_PARAMS',
-        'token0/token1 are required for single-sided auto-compute',
-      )
+      const posToken0 = pos.token0 ?? tronWeb.address.fromHex(pos[2])
+      const posToken1 = pos.token1 ?? tronWeb.address.fromHex(pos[3])
+      token0 = token0 || posToken0
+      token1 = token1 || posToken1
+      // Re-sort tokens
+      ;[token0, token1, swapped] = await sortTokens(ctx, network, token0!, token1!)
+      // Re-map amounts based on new swap status
+      amount0 = swapped
+        ? BigInt(params.amount1Desired || '0')
+        : BigInt(params.amount0Desired || '0')
+      amount1 = swapped
+        ? BigInt(params.amount0Desired || '0')
+        : BigInt(params.amount1Desired || '0')
     }
 
-    const fee = params.fee ?? DEFAULT_FEE
+    // Get fee from position if not provided
+    const fee = params.fee ?? Number(pos.fee ?? pos[4]) ?? DEFAULT_FEE
     const poolInfo = await getV3PoolInfo(ctx, network, token0, token1, fee)
     if (!poolInfo) {
       throw new SunKitError('POOL_NOT_FOUND', `V3 pool not found for ${token0}/${token1} fee=${fee}`)
     }
 
-    let tickLower = params.tickLower
-    let tickUpper = params.tickUpper
-
-    if (tickLower == null || tickUpper == null) {
-      const tronWeb = await createReadonlyTronWeb(network, ctx.rpcOverride, ctx.apiKey)
-      const pm = await tronWeb.contract(
-        params.abi ?? SUNSWAP_V3_POSITION_MANAGER_MIN_ABI,
-        params.positionManagerAddress,
-      )
-      const pos = await (pm as any).positions(params.tokenId).call()
-      tickLower = tickLower ?? Number(pos.tickLower ?? pos[5])
-      tickUpper = tickUpper ?? Number(pos.tickUpper ?? pos[6])
-    }
+    // Get tick range from position if not provided
+    let tickLower = params.tickLower ?? Number(pos.tickLower ?? pos[5])
+    let tickUpper = params.tickUpper ?? Number(pos.tickUpper ?? pos[6])
 
     const sqrtPriceX96 = BigInt(poolInfo.sqrtPriceX96)
     const sqrtA = getSqrtRatioAtTick(tickLower!)
@@ -365,8 +384,8 @@ export async function collectPositionV3(
   const amount1 = (feesRaw.amount1 ?? feesRaw[1] ?? '0').toString()
   const estimatedFees = { amount0, amount1 }
 
-  // Convert recipient address to hex format for ABI encoding
-  const recipientHex = toHexAddress(tronWeb, recipient)
+  // Convert recipient address to EVM hex format for ABI encoding
+  const recipientHex = toEvmHexAddress(tronWeb, recipient)
 
   const args = [[params.tokenId, recipientHex, MAX_UINT128, MAX_UINT128]]
 
