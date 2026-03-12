@@ -86,6 +86,26 @@ function toEvmHex(tronWeb: { address: { toHex: (a: string) => string } }, addr: 
   return `0x${body}` as `0x${string}`
 }
 
+/**
+ * Convert TRON hex address (41-prefixed) to EVM hex address (0x-prefixed).
+ * Used for addresses returned from chain queries (already in hex format).
+ * viem expects 20 bytes (40 hex chars) with 0x prefix.
+ */
+function tronHexToEvmHex(hexAddr: string): `0x${string}` {
+  if (!hexAddr) return ZERO_HEX_ADDRESS
+  // Already in EVM format
+  if (hexAddr.startsWith('0x') && hexAddr.length === 42) {
+    return hexAddr as `0x${string}`
+  }
+  // TRON hex format: 41 + 40 chars = 42 chars total
+  if (hexAddr.startsWith('41') && hexAddr.length === 42) {
+    return `0x${hexAddr.slice(2)}` as `0x${string}`
+  }
+  // Handle other formats: just ensure 0x prefix and take last 40 chars
+  const clean = hexAddr.replace(/^0x/, '').slice(-40).padStart(40, '0')
+  return `0x${clean}` as `0x${string}`
+}
+
 async function buildEncodedPoolKey(
   tronWeb: { address: { toHex: (a: string) => string } },
   token0: string,
@@ -776,8 +796,11 @@ export async function collectPositionV4(
     tickSpacing = FEE_TICK_SPACING[fee] ?? 10
   } else {
     const poolKeyObjTyped = poolKeyObj as { currency0?: string; currency1?: string; fee?: number }
-    currency0 = (poolKeyObjTyped?.currency0 ?? poolKeyArr[0] ?? ZERO_HEX_ADDRESS) as `0x${string}`
-    currency1 = (poolKeyObjTyped?.currency1 ?? poolKeyArr[1] ?? ZERO_HEX_ADDRESS) as `0x${string}`
+    const rawCurrency0 = poolKeyObjTyped?.currency0 ?? poolKeyArr[0] ?? ''
+    const rawCurrency1 = poolKeyObjTyped?.currency1 ?? poolKeyArr[1] ?? ''
+    // Convert TRON hex (41...) to EVM hex (0x...) for viem compatibility
+    currency0 = tronHexToEvmHex(rawCurrency0 as string)
+    currency1 = tronHexToEvmHex(rawCurrency1 as string)
     fee = Number(poolKeyObjTyped?.fee ?? poolKeyArr[3] ?? 500)
     tickSpacing = FEE_TICK_SPACING[fee] ?? 10
   }
