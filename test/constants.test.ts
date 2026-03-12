@@ -29,6 +29,7 @@ import {
   SUNSWAP_V2_FACTORY_MIN_ABI,
   SUNSWAP_V2_PAIR_MIN_ABI,
   SUNSWAP_V3_POSITION_MANAGER_MIN_ABI,
+  SUNSWAP_V3_COLLECT_VIEW_ABI,
   SUNSWAP_V4_CL_POSITION_MANAGER_MIN_ABI,
   SUNPUMP_ABI,
 } from '../src/constants'
@@ -159,6 +160,22 @@ describe('constants', () => {
       const input = mintEntry!.inputs[0] as { type: string; components?: unknown[] }
       expect(input.components).toBeDefined()
       expect(input.components!.length).toBeGreaterThan(0)
+    })
+
+    it('V3 collect ABI has payable version for transactions', () => {
+      const collectEntry = SUNSWAP_V3_POSITION_MANAGER_MIN_ABI.find((entry) => entry.name === 'collect')
+      expect(collectEntry).toBeDefined()
+      expect((collectEntry as any).stateMutability).toBe('payable')
+    })
+
+    it('V3 collect view ABI has view version for static calls', () => {
+      const collectEntry = SUNSWAP_V3_COLLECT_VIEW_ABI.find((entry) => entry.name === 'collect')
+      expect(collectEntry).toBeDefined()
+      expect((collectEntry as any).stateMutability).toBe('view')
+      expect(collectEntry!.inputs[0].type).toBe('tuple')
+      const input = collectEntry!.inputs[0] as { type: string; components?: unknown[] }
+      expect(input.components).toBeDefined()
+      expect(input.components!.length).toBe(4)
     })
   })
 })

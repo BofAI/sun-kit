@@ -7,7 +7,7 @@ import type {
 } from '../types'
 import { sendContractTx, ensureTokenAllowance, requireWallet, type ContractContext } from './contracts'
 import { createReadonlyTronWeb } from './tronweb'
-import { SUNSWAP_V3_POSITION_MANAGER_MIN_ABI } from '../constants'
+import { SUNSWAP_V3_POSITION_MANAGER_MIN_ABI, SUNSWAP_V3_COLLECT_VIEW_ABI } from '../constants'
 import { getV3PoolInfo } from './v3-pool'
 import {
   getSqrtRatioAtTick,
@@ -374,7 +374,9 @@ export async function collectPositionV3(
   const pmAbi = params.abi ?? SUNSWAP_V3_POSITION_MANAGER_MIN_ABI
 
   const tronWeb = await createReadonlyTronWeb(network, ctx.rpcOverride, ctx.apiKey)
-  const pmView = await tronWeb.contract(pmAbi, params.positionManagerAddress)
+
+  // Use view ABI for static call to estimate fees
+  const pmView = await tronWeb.contract(SUNSWAP_V3_COLLECT_VIEW_ABI, params.positionManagerAddress)
 
   const feesRaw = await (pmView as any)
     .collect([params.tokenId, ownerAddress, MAX_UINT128, MAX_UINT128])
@@ -389,6 +391,7 @@ export async function collectPositionV3(
 
   const args = [[params.tokenId, recipientHex, MAX_UINT128, MAX_UINT128]]
 
+  // Use payable ABI for actual transaction
   const txResult = await sendContractTx(ctx, {
     address: params.positionManagerAddress,
     functionName: 'collect',

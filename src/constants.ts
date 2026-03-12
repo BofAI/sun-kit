@@ -303,6 +303,34 @@ export const SUNSWAP_V3_POSITION_MANAGER_MIN_ABI = [
 ]
 
 // ---------------------------------------------------------------------------
+// V3 PositionManager collect view ABI (for static calls / fee estimation)
+// ---------------------------------------------------------------------------
+
+export const SUNSWAP_V3_COLLECT_VIEW_ABI = [
+  {
+    inputs: [
+      {
+        components: [
+          { name: 'tokenId', type: 'uint256' },
+          { name: 'recipient', type: 'address' },
+          { name: 'amount0Max', type: 'uint128' },
+          { name: 'amount1Max', type: 'uint128' },
+        ],
+        name: 'params',
+        type: 'tuple',
+      },
+    ],
+    name: 'collect',
+    outputs: [
+      { name: 'amount0', type: 'uint256' },
+      { name: 'amount1', type: 'uint256' },
+    ],
+    stateMutability: 'view',
+    type: 'function',
+  },
+]
+
+// ---------------------------------------------------------------------------
 // V4 CLPositionManager ABI
 // ---------------------------------------------------------------------------
 
