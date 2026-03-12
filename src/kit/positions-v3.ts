@@ -380,7 +380,7 @@ export async function collectPositionV3(
 
   const feesRaw = await (pmView as any)
     .collect([params.tokenId, ownerAddress, MAX_UINT128, MAX_UINT128])
-    .call({ from: ownerAddress })
+    .call({ from: ownerAddress,isConstant: true })
 
   const amount0 = (feesRaw.amount0 ?? feesRaw[0] ?? '0').toString()
   const amount1 = (feesRaw.amount1 ?? feesRaw[1] ?? '0').toString()
