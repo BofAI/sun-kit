@@ -52,6 +52,23 @@ export async function readContract(
 // Build unsigned transactions
 // ---------------------------------------------------------------------------
 
+/**
+ * Expands tuple types to their full signature format.
+ * e.g., tuple with components [address, uint256] becomes "(address,uint256)"
+ * This is required for TronWeb 6.x / ethers 6.x compatibility.
+ */
+function expandTupleType(input: any): string {
+  if (input.type === 'tuple' && input.components) {
+    const inner = input.components.map((c: any) => expandTupleType(c)).join(',')
+    return `(${inner})`
+  }
+  if (input.type === 'tuple[]' && input.components) {
+    const inner = input.components.map((c: any) => expandTupleType(c)).join(',')
+    return `(${inner})[]`
+  }
+  return input.type
+}
+
 export async function buildUnsignedContractTx(
   tronWeb: TronWeb,
   params: ContractSendParams,
@@ -78,11 +95,11 @@ export async function buildUnsignedContractTx(
     )
   }
 
-  const paramTypes = (abiEntry.inputs || []).map((i: any) => i.type).join(',')
+  const paramTypes = (abiEntry.inputs || []).map((i: any) => expandTupleType(i)).join(',')
   const functionSelector = `${params.functionName}(${paramTypes})`
 
   const typedParams = (abiEntry.inputs || []).map((input: any, idx: number) => ({
-    type: input.type,
+    type: expandTupleType(input),
     value: args[idx],
   }))
 

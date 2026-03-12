@@ -307,13 +307,13 @@ export async function decreaseLiquidityV3(
 ): Promise<unknown> {
   const deadline = params.deadline ?? Math.floor(Date.now() / 1000) + 30 * 60
 
-  const args = [{
-    tokenId: params.tokenId,
-    liquidity: params.liquidity,
-    amount0Min: params.amount0Min ?? '0',
-    amount1Min: params.amount1Min ?? '0',
+  const args = [[
+    params.tokenId,
+    params.liquidity,
+    params.amount0Min ?? '0',
+    params.amount1Min ?? '0',
     deadline,
-  }]
+  ]]
 
   return sendContractTx(ctx, {
     address: params.positionManagerAddress,
