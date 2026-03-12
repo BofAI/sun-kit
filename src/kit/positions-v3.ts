@@ -19,6 +19,14 @@ import {
 const DEFAULT_FEE = 3000
 const DEFAULT_TICK_RANGE_FACTOR = 100
 
+/**
+ * Convert Base58 address to hex format for ABI encoding.
+ * TronWeb 6.x / ethers 6.x ABI encoder requires hex addresses.
+ */
+function toHexAddress(tronWeb: any, addr: string): string {
+  return tronWeb.address.toHex(addr)
+}
+
 async function sortTokens(
   ctx: ContractContext,
   network: string,
@@ -124,9 +132,15 @@ export async function mintPositionV3(
     requiredAmount: amount1.toString(),
   })
 
+  // Convert addresses to hex format for ABI encoding (TronWeb 6.x / ethers 6.x)
+  const tronWeb = await createReadonlyTronWeb(network, ctx.rpcOverride, ctx.apiKey)
+  const token0Hex = toHexAddress(tronWeb, token0)
+  const token1Hex = toHexAddress(tronWeb, token1)
+  const recipientHex = toHexAddress(tronWeb, recipient)
+
   const args = [[
-    token0,
-    token1,
+    token0Hex,
+    token1Hex,
     fee,
     tickLower,
     tickUpper,
@@ -134,7 +148,7 @@ export async function mintPositionV3(
     amount1.toString(),
     userAmount0Min ?? '0',
     userAmount1Min ?? '0',
-    recipient,
+    recipientHex,
     deadline,
   ]]
 
@@ -351,7 +365,10 @@ export async function collectPositionV3(
   const amount1 = (feesRaw.amount1 ?? feesRaw[1] ?? '0').toString()
   const estimatedFees = { amount0, amount1 }
 
-  const args = [[params.tokenId, recipient, MAX_UINT128, MAX_UINT128]]
+  // Convert recipient address to hex format for ABI encoding
+  const recipientHex = toHexAddress(tronWeb, recipient)
+
+  const args = [[params.tokenId, recipientHex, MAX_UINT128, MAX_UINT128]]
 
   const txResult = await sendContractTx(ctx, {
     address: params.positionManagerAddress,

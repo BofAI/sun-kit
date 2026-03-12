@@ -2,4 +2,16 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# IDE
 .claude
+.vscode/
+
+# Environment
+.env
+.env.local
+
+# Test coverage
+coverage/
+
+# Tarballs
+*.tgz
