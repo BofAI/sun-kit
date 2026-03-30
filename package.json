@@ -1,6 +1,6 @@
 {
   "name": "@bankofai/sun-kit",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "SUNSWAP SDK — typed client for SUN.IO read APIs and wallet-dependent on-chain operations (swap, liquidity, positions)",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
