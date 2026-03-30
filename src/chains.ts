@@ -14,9 +14,9 @@ export interface NetworkConfig {
 export const NETWORKS: Record<TronNetwork, NetworkConfig> = {
   [TronNetwork.Mainnet]: {
     name: 'Mainnet',
-    fullNode: 'https://api.trongrid.io',
-    solidityNode: 'https://api.trongrid.io',
-    eventServer: 'https://api.trongrid.io',
+    fullNode: 'https://hptg.bankofai.io',
+    solidityNode: 'https://hptg.bankofai.io',
+    eventServer: 'https://hptg.bankofai.io',
   },
   [TronNetwork.Nile]: {
     name: 'Nile',
